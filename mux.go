@@ -15,8 +15,14 @@ type Router struct {
 // New creates a new instance of the Router struct.
 // It initializes the mux field with a new instance of http.ServeMux.
 // Returns a pointer to the newly created Router.
-func New() *Router {
+func New(mux *http.ServeMux) *Router {
 	return &Router{
-		mux: http.NewServeMux(),
+		mux: mux,
 	}
+}
+
+// ServeHTTP implements the http.Handler interface.
+// It calls the ServeHTTP method of the underlying http.ServeMux.
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.mux.ServeHTTP(w, req)
 }
