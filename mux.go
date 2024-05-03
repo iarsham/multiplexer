@@ -8,14 +8,10 @@ import (
 // reGo122 is a compiled regular expression used to match and extract two groups from a string pattern.
 var reGo122 = regexp.MustCompile(`^(\S*)\s+(.*)$`)
 
-// Middlewares represents a list of middleware functions.
-type Middlewares []func(http.Handler) http.Handler
-
 // Router represents a multiplexer that routes incoming HTTP requests.
 type Router struct {
 	mux  *http.ServeMux
 	path string
-	mws  Middlewares
 }
 
 // New creates a new instance of the Router struct.
