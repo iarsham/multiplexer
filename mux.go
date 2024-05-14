@@ -51,3 +51,11 @@ func (r *Router) HandleFunc(pattern string, handler http.HandlerFunc) {
 func (r *Router) Handle(pattern string, handler http.Handler) {
 	r.register(pattern, handler.ServeHTTP)
 }
+
+// Group creates a new sub-router with the given path appended to the base path of the parent router.
+func (r *Router) Group(subPath string) *Router {
+	return &Router{
+		mux:  r.mux,
+		path: r.path + subPath,
+	}
+}
