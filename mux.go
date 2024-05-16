@@ -1,7 +1,6 @@
 package multiplexer
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -38,7 +37,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.NotFound.ServeHTTP(w, req)
 		return
 	}
-	fmt.Println(isMethodEqualToPattern(req, p))
 	if r.MethodNotAllowed != nil && !isMethodEqualToPattern(req, p) {
 		r.MethodNotAllowed.ServeHTTP(w, req)
 		return
