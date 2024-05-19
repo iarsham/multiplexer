@@ -33,11 +33,13 @@ func New(mux *http.ServeMux, basePath string) *Router {
 // It also handles the custom NotFound and MethodNotAllowed handlers.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h, p := r.mux.Handler(req)
+	p = strings.Split(p, " ")[0]
 	if r.NotFound != nil && isDefaultNotFoundHandler(h) {
 		r.NotFound.ServeHTTP(w, req)
 		return
 	}
-	if r.MethodNotAllowed != nil && !isMethodEqualToPattern(req, p) {
+	if r.MethodNotAllowed != nil && req.Method != p {
+		w.Header().Set("Allow", p)
 		r.MethodNotAllowed.ServeHTTP(w, req)
 		return
 	}
@@ -78,9 +80,4 @@ func (r *Router) Group(subPath string) *Router {
 // Returns true if the provided handler is the default NotFoundHandler.
 func isDefaultNotFoundHandler(h http.Handler) bool {
 	return reflect.ValueOf(h).Pointer() == reflect.ValueOf(http.NotFoundHandler()).Pointer()
-}
-
-// Returns true if the request method matches the pattern method.
-func isMethodEqualToPattern(r *http.Request, pattern string) bool {
-	return r.Method == strings.Split(pattern, " ")[0]
 }
