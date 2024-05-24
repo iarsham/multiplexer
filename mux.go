@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
-	"strings"
 )
 
 // reGo122 is a compiled regular expression used to match and extract two groups from a string pattern.
@@ -33,15 +32,15 @@ func New(mux *http.ServeMux, basePath string) *Router {
 // It also handles the custom NotFound and MethodNotAllowed handlers.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h, p := r.mux.Handler(req)
-	p = strings.Split(p, " ")[0]
-	if r.NotFound != nil && isDefaultNotFoundHandler(h) {
-		r.NotFound.ServeHTTP(w, req)
-		return
-	}
-	if r.MethodNotAllowed != nil && req.Method != p {
-		w.Header().Set("Allow", p)
-		r.MethodNotAllowed.ServeHTTP(w, req)
-		return
+	if p == "" {
+		if r.NotFound != nil && isDefaultNotFoundHandler(h) {
+			r.NotFound.ServeHTTP(w, req)
+			return
+		}
+		if r.MethodNotAllowed != nil && !isDefaultNotFoundHandler(h) {
+			r.MethodNotAllowed.ServeHTTP(w, req)
+			return
+		}
 	}
 	r.mux.ServeHTTP(w, req)
 }
