@@ -57,3 +57,28 @@ func TestHttpMethodNotAllowed(t *testing.T) {
 		t.Fatalf("expected: %d, got %d", http.StatusMethodNotAllowed, resp.StatusCode)
 	}
 }
+
+func testMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("test-middleware", "true")
+		next.ServeHTTP(w, r)
+	})
+}
+
+func TestMiddleware(t *testing.T) {
+	mux := New(http.NewServeMux(), "/")
+	dynamic := NewChain(testMiddleware)
+	mux.Handle("GET api/hello", dynamic.WrapFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+	resp, err := http.Get(ts.URL + "/api/hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.Header.Get("test-middleware") != "true" {
+		t.Fatalf("expected: true, got %s", resp.Header.Get("test-middleware"))
+	}
+}
