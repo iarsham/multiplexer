@@ -30,12 +30,12 @@ func TestHttpNotFound(t *testing.T) {
 }
 
 func TestHttpMethodNotAllowed(t *testing.T) {
-	mux := New(http.NewServeMux(), "/")
+	mux := New(http.NewServeMux(), "/api")
 	mux.MethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		w.Write([]byte("custom method not allowed handler"))
 	})
-	mux.HandleFunc("GET api/hello", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello"))
 	})
@@ -58,27 +58,41 @@ func TestHttpMethodNotAllowed(t *testing.T) {
 	}
 }
 
-func testMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("test-middleware", "true")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func TestMiddleware(t *testing.T) {
-	mux := New(http.NewServeMux(), "/")
-	dynamic := NewChain(testMiddleware)
-	mux.Handle("GET api/hello", dynamic.WrapFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestHttpPathWithSlash(t *testing.T) {
+	mux := New(http.NewServeMux(), "/api")
+	mux.HandleFunc("GET /hello", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	}))
+	})
 	ts := httptest.NewServer(mux)
 	defer ts.Close()
-	resp, err := http.Get(ts.URL + "/api/hello")
+	resp, err := http.Get(ts.URL + "/api/hello/")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-	if resp.Header.Get("test-middleware") != "true" {
-		t.Fatalf("expected: true, got %s", resp.Header.Get("test-middleware"))
+	if resp.StatusCode == http.StatusNotFound {
+		t.Fatal("expected with / 200 but got 404")
+	}
+}
+
+func TestHttpGroupAPI(t *testing.T) {
+	mux := New(http.NewServeMux(), "/api")
+	usersGroup := mux.Group("/users")
+	usersGroup.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("user is here"))
+	})
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+	resp, err := http.Get(ts.URL + "/api/users/fetch")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "user is here" {
+		t.Fatalf("expected: user is here, got %s", string(body))
 	}
 }
